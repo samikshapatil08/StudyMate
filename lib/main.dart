@@ -8,9 +8,12 @@ import 'blocs/auth/auth_bloc.dart';
 import 'blocs/notes/notes_bloc.dart';
 import 'blocs/todo/todo_bloc.dart';
 import 'blocs/chat/chat_bloc.dart';
-//import 'package:cloudinary_flutter/cloudinary_context.dart';
-//import 'package:cloudinary_flutter/image/cld_image.dart';
-//import 'package:cloudinary_url_gen/cloudinary.dart';
+import 'blocs/fun/timer/timer_bloc.dart';
+import 'blocs/fun/cat/cat_bloc.dart';
+import 'blocs/fun/fact/fact_bloc.dart';
+import 'blocs/fun/streaks/streaks_bloc.dart';
+import 'blocs/theme/theme_bloc.dart'; // ✅ Import ThemeBloc
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -30,12 +33,28 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => NotesBloc()),
         BlocProvider(create: (_) => TodoBloc()),
         BlocProvider(create: (_) => ChatBloc()),
+        // Fun Feature Blocs
+        BlocProvider(create: (_) => TimerBloc()),
+        BlocProvider(create: (_) => CatBloc()),
+        BlocProvider(create: (_) => FactBloc()),
+        BlocProvider(create: (_) => StreaksBloc()),
+        // ✅ Theme Bloc
+        BlocProvider(create: (_) => ThemeBloc()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.theme,
-        home: const SplashScreen(),
+      // ✅ Wrap with BlocBuilder to rebuild app on theme change
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'StudyMate',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: state.themeMode, // ✅ Dynamic Theme Mode
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }
 }
+  

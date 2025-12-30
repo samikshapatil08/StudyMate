@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
-import '../blocs/chat/chat_bloc.dart'; // ✅ Only import the main Bloc file
+import '../blocs/chat/chat_bloc.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -18,15 +18,16 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    // ✅ BLoC Event Dispatch
     context.read<ChatBloc>().add(ChatMessageSent(text));
     _controller.clear();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // ✅
+
     return Scaffold(
-      backgroundColor: AppTheme.bgLight,
+      backgroundColor: theme.scaffoldBackgroundColor, // ✅
       body: SafeArea(
         bottom: false,
         child: Padding(
@@ -47,10 +48,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
                     
                     if (state is ChatError) {
-                      return Center(child: Text(state.message));
+                      return Center(child: Text(state.message, style: TextStyle(color: theme.textTheme.bodyLarge?.color)));
                     }
 
-                    // ✅ Access messages from state
                     final docs = (state as ChatLoaded).messages;
                     
                     return ListView.builder(
@@ -70,14 +70,14 @@ class _ChatScreenState extends State<ChatScreen> {
                             constraints: const BoxConstraints(maxWidth: 280),
                             decoration: BoxDecoration(
                               color: isUser
-                                  ? AppTheme.accentGreen
-                                  : AppTheme.secondaryBlue,
+                                  ? AppTheme.accentGreen // ✅ Keep Brand Color
+                                  : AppTheme.secondaryBlue, // ✅ Keep Brand Color
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               msg['text'],
                               style: GoogleFonts.inter(
-                                color: AppTheme.textOnColor,
+                                color: AppTheme.textOnColor, // ✅ Always White
                               ),
                             ),
                           ),
@@ -96,9 +96,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     isSending = state.isSending;
                   }
                   if (isSending) {
-                    return const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text("Gemini is typing..."),
+                    return Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("Gemini is typing...", style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
                     );
                   }
                   return const SizedBox.shrink();
@@ -108,11 +108,11 @@ class _ChatScreenState extends State<ChatScreen> {
               /// 🔹 INPUT BAR
               Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.cardWhite,
+                  color: theme.cardColor, // ✅ Dynamic
                   borderRadius: BorderRadius.circular(40),
                   border: Border(
-                    top: BorderSide(color: Colors.grey.shade300),
-                    bottom: BorderSide(color: Colors.grey.shade300),
+                    top: BorderSide(color: theme.dividerColor),
+                    bottom: BorderSide(color: theme.dividerColor),
                   ),
                 ),
                 padding: const EdgeInsets.all(5.0),
@@ -122,6 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: TextField(
                         controller: _controller,
+                        style: TextStyle(color: theme.textTheme.bodyLarge?.color), // ✅ Input Color
                         decoration: const InputDecoration(
                           hintText: "Ask anything...",
                           hintStyle: TextStyle(color: AppTheme.accentGreen),

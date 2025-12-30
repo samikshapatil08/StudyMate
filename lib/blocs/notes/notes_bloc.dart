@@ -10,7 +10,6 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 part 'notes_event.dart';
 part 'notes_state.dart';
 
-// Internal Event
 class _NotesUpdated extends NotesEvent {
   final List<QueryDocumentSnapshot> docs;
   _NotesUpdated(this.docs);
@@ -20,9 +19,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
-  // ☁️ Cloudinary Configuration
   final CloudinaryPublic _cloudinary = CloudinaryPublic(
-    'jb-demo', 
+    'ddkhgfnck', 
     'notes_preset', 
     cache: false,
   );
@@ -36,27 +34,18 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     on<NotesDeleteRequested>(_onDeleteRequested);
     on<NotesSearchChanged>(_onSearchChanged);
     on<NotesSortChanged>(_onSortChanged);
-    // ✅ Register Filter Handler
-    on<NotesFilterChanged>(_onFilterChanged);
+    on<NotesFilterChanged>(_onFilterChanged); // ✅ Register Handler
     on<_NotesUpdated>(_onNotesUpdated);
     on<NotesUploadAttachmentRequested>(_onUploadAttachmentRequested);
   }
 
   String get _uid => _auth.currentUser!.uid;
 
-  // --- EXISTING LOGIC ---
-
   Future<void> _onSubscriptionRequested(
       NotesSubscriptionRequested event, Emitter<NotesState> emit) async {
     emit(NotesLoading());
     await _notesSubscription?.cancel();
-    
-    _notesSubscription = _db
-        .collection('users')
-        .doc(_uid)
-        .collection('notes')
-        .snapshots()
-        .listen((snapshot) {
+    _notesSubscription = _db.collection('users').doc(_uid).collection('notes').snapshots().listen((snapshot) {
       add(_NotesUpdated(snapshot.docs));
     });
   }
@@ -73,6 +62,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       currentFilter = s.filterOption;
     }
 
+    // ✅ Apply Filter
     final filtered = _processList(event.docs, currentQuery, currentSort, currentFilter);
     emit(NotesLoaded(
       allNotes: event.docs, 
@@ -83,6 +73,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     ));
   }
 
+  // ✅ Search Handler
   Future<void> _onSearchChanged(NotesSearchChanged event, Emitter<NotesState> emit) async {
     final currentState = _getSafeLoadedState(state);
     if (currentState != null) {
@@ -97,6 +88,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     }
   }
 
+  // ✅ Sort Handler
   Future<void> _onSortChanged(NotesSortChanged event, Emitter<NotesState> emit) async {
     final currentState = _getSafeLoadedState(state);
     if (currentState != null) {
@@ -111,7 +103,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     }
   }
 
-  // ✅ Handle Filter Change
+  // ✅ Filter Handler
   Future<void> _onFilterChanged(NotesFilterChanged event, Emitter<NotesState> emit) async {
     final currentState = _getSafeLoadedState(state);
     if (currentState != null) {
@@ -126,8 +118,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     }
   }
 
-  // --- CLOUDINARY LOGIC ---
-
+  // ✅ Upload Logic
   Future<void> _onUploadAttachmentRequested(
       NotesUploadAttachmentRequested event, Emitter<NotesState> emit) async {
     
@@ -136,7 +127,8 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
 
     emit(NoteAttachmentUploading(
       allNotes: currentState.allNotes,
-      filteredNotes: currentState.filteredNotes
+      filteredNotes: currentState.filteredNotes,
+      filterOption: currentState.filterOption,
     ));
 
     try {
@@ -170,37 +162,36 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         type: event.fileType,
         allNotes: currentState.allNotes,
         filteredNotes: currentState.filteredNotes,
+        filterOption: currentState.filterOption,
       ));
 
     } catch (e) {
       debugPrint("Upload Error: $e");
-      
       emit(NoteAttachmentUploadFailure(
         message: "Upload failed: $e",
         allNotes: currentState.allNotes,
         filteredNotes: currentState.filteredNotes,
+        filterOption: currentState.filterOption,
       ));
       
-      // Revert to Loaded state
+      // Revert state
       emit(NotesLoaded(
         allNotes: currentState.allNotes,
         filteredNotes: currentState.filteredNotes,
-        // Safe to use defaults or previous if stored, usually fine here
+        searchQuery: currentState.searchQuery,
+        sortOption: currentState.sortOption,
+        filterOption: currentState.filterOption,
       ));
     }
   }
 
-  // --- CRUD OPERATIONS ---
-
+  // CRUD Operations (No changes needed)
   Future<void> _onAddRequested(NotesAddRequested event, Emitter<NotesState> emit) async {
-    if (event.title.trim().isEmpty && event.content.trim().isEmpty && event.attachments.isEmpty) {
-      return;
-    }
-    
+    if (event.title.trim().isEmpty && event.content.trim().isEmpty && event.attachments.isEmpty) return;
     await _db.collection('users').doc(_uid).collection('notes').add({
       'title': event.title,
       'content': event.content,
-      'attachments': event.attachments, 
+      'attachments': event.attachments,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -218,28 +209,21 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     await _db.collection('users').doc(_uid).collection('notes').doc(event.noteId).delete();
   }
 
-  // --- HELPERS ---
-
+  // Helper
   NotesLoaded? _getSafeLoadedState(NotesState state) {
     if (state is NotesLoaded) return state;
-    if (state is NoteAttachmentUploading) {
-      return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes);
-    }
-    if (state is NoteAttachmentUploadSuccess) {
-      return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes);
-    }
-    if (state is NoteAttachmentUploadFailure) {
-      return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes);
-    }
+    if (state is NoteAttachmentUploading) return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes, filterOption: state.filterOption);
+    if (state is NoteAttachmentUploadSuccess) return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes, filterOption: state.filterOption);
+    if (state is NoteAttachmentUploadFailure) return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes, filterOption: state.filterOption);
     return null;
   }
 
-  // 🧠 CORE LOGIC: Filter & Sort
+  // ✅ LOGIC: Processing the List
   List<QueryDocumentSnapshot> _processList(
     List<QueryDocumentSnapshot> docs, 
     String query, 
     NoteSortOption sort,
-    NoteFilterOption filter, // ✅ Add Filter Param
+    NoteFilterOption filter,
   ) {
     // 1. Search Query
     var list = docs.where((doc) {
@@ -251,30 +235,29 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     }).toList();
 
     // 2. ✅ Filter (Has Image / Text Only)
-    list = list.where((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      final attachments = List<Map<String, dynamic>>.from(data['attachments'] ?? []);
-      
-      if (filter == NoteFilterOption.hasImage) {
-        // Must have at least one image
-        return attachments.any((att) => att['type'] == 'image');
-      } else if (filter == NoteFilterOption.textOnly) {
-        // Must have NO attachments (or strictly no images, usually "Text Only" means clean text)
-        return attachments.isEmpty; 
-      }
-      return true; // All
-    }).toList();
+    if (filter != NoteFilterOption.all) {
+      list = list.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final attachments = List<Map<String, dynamic>>.from(data['attachments'] ?? []);
+        
+        if (filter == NoteFilterOption.hasImage) {
+          // Must have at least one image
+          return attachments.any((att) => att['type'] == 'image');
+        } else if (filter == NoteFilterOption.textOnly) {
+          // Must have NO attachments (Text Only)
+          return attachments.isEmpty; 
+        }
+        return true;
+      }).toList();
+    }
 
     // 3. Sort
     list.sort((a, b) {
       final dataA = a.data() as Map<String, dynamic>;
       final dataB = b.data() as Map<String, dynamic>;
-      
       switch (sort) {
-        case NoteSortOption.aToZ:
-          return (dataA['title'] ?? '').toString().compareTo(dataB['title'] ?? '');
-        case NoteSortOption.zToA:
-          return (dataB['title'] ?? '').toString().compareTo(dataA['title'] ?? '');
+        case NoteSortOption.aToZ: return (dataA['title'] ?? '').toString().compareTo(dataB['title'] ?? '');
+        case NoteSortOption.zToA: return (dataB['title'] ?? '').toString().compareTo(dataA['title'] ?? '');
         case NoteSortOption.oldest:
           final tA = (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
           final tB = (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
@@ -285,7 +268,6 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
           return tB.compareTo(tA);
       }
     });
-
     return list;
   }
 }

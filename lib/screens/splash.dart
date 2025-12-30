@@ -23,11 +23,16 @@ class SplashScreen extends StatelessWidget {
           );
         }
       },
-      child: const Scaffold(
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor, // ✅
         body: Center(
           child: Text(
             'StudyMate',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 30, 
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color, // ✅
+            ),
           ),
         ),
       ),

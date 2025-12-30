@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 part 'todo_event.dart';
 part 'todo_state.dart';
 
-// Internal Event
 class _TodosUpdated extends TodoEvent {
   final List<QueryDocumentSnapshot> docs;
   _TodosUpdated(this.docs);
@@ -25,7 +24,7 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     on<TodoSearchChanged>(_onSearchChanged);
     on<TodoSortChanged>(_onSortChanged);
     on<TodoFilterChanged>(_onFilterChanged);
-    // ✅ FIX: Register internal event
+    on<TodoViewToggled>(_onViewToggled); // ✅
     on<_TodosUpdated>(_onTodosUpdated);
   }
 
@@ -45,17 +44,18 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     });
   }
 
-  // ✅ Handler for stream updates
   Future<void> _onTodosUpdated(_TodosUpdated event, Emitter<TodoState> emit) async {
     String query = '';
     TodoSortOption sort = TodoSortOption.newest;
     TodoFilterStatus filter = TodoFilterStatus.all;
+    bool isCalendar = false;
 
     if (state is TodosLoaded) {
       final s = state as TodosLoaded;
       query = s.searchQuery;
       sort = s.sortOption;
       filter = s.filterStatus;
+      isCalendar = s.isCalendarView;
     }
 
     final filtered = _processList(event.docs, query, sort, filter);
@@ -65,86 +65,63 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
       searchQuery: query,
       sortOption: sort,
       filterStatus: filter,
+      isCalendarView: isCalendar,
     ));
   }
 
+  void _onViewToggled(TodoViewToggled event, Emitter<TodoState> emit) {
+    if (state is TodosLoaded) {
+      final s = state as TodosLoaded;
+      emit(TodosLoaded(
+        allTodos: s.allTodos,
+        filteredTodos: s.filteredTodos,
+        searchQuery: s.searchQuery,
+        sortOption: s.sortOption,
+        filterStatus: s.filterStatus,
+        isCalendarView: !s.isCalendarView,
+      ));
+    }
+  }
+
+  // (Helper search/sort/filter event handlers...)
   Future<void> _onSearchChanged(TodoSearchChanged event, Emitter<TodoState> emit) async {
     if (state is TodosLoaded) {
       final s = state as TodosLoaded;
       final filtered = _processList(s.allTodos, event.query, s.sortOption, s.filterStatus);
-      emit(TodosLoaded(
-        allTodos: s.allTodos,
-        filteredTodos: filtered,
-        searchQuery: event.query,
-        sortOption: s.sortOption,
-        filterStatus: s.filterStatus,
-      ));
+      emit(TodosLoaded(allTodos: s.allTodos, filteredTodos: filtered, searchQuery: event.query, sortOption: s.sortOption, filterStatus: s.filterStatus, isCalendarView: s.isCalendarView));
     }
   }
-
   Future<void> _onSortChanged(TodoSortChanged event, Emitter<TodoState> emit) async {
     if (state is TodosLoaded) {
       final s = state as TodosLoaded;
       final filtered = _processList(s.allTodos, s.searchQuery, event.option, s.filterStatus);
-      emit(TodosLoaded(
-        allTodos: s.allTodos,
-        filteredTodos: filtered,
-        searchQuery: s.searchQuery,
-        sortOption: event.option,
-        filterStatus: s.filterStatus,
-      ));
+      emit(TodosLoaded(allTodos: s.allTodos, filteredTodos: filtered, searchQuery: s.searchQuery, sortOption: event.option, filterStatus: s.filterStatus, isCalendarView: s.isCalendarView));
     }
   }
-
   Future<void> _onFilterChanged(TodoFilterChanged event, Emitter<TodoState> emit) async {
     if (state is TodosLoaded) {
       final s = state as TodosLoaded;
       final filtered = _processList(s.allTodos, s.searchQuery, s.sortOption, event.status);
-      emit(TodosLoaded(
-        allTodos: s.allTodos,
-        filteredTodos: filtered,
-        searchQuery: s.searchQuery,
-        sortOption: s.sortOption,
-        filterStatus: event.status,
-      ));
+      emit(TodosLoaded(allTodos: s.allTodos, filteredTodos: filtered, searchQuery: s.searchQuery, sortOption: s.sortOption, filterStatus: event.status, isCalendarView: s.isCalendarView));
     }
   }
 
-  // 🧠 CORE LOGIC
-  List<QueryDocumentSnapshot> _processList(
-    List<QueryDocumentSnapshot> docs,
-    String query,
-    TodoSortOption sort,
-    TodoFilterStatus filter,
-  ) {
-    // 1. Filter by Status
+  List<QueryDocumentSnapshot> _processList(List<QueryDocumentSnapshot> docs, String query, TodoSortOption sort, TodoFilterStatus filter) {
     var list = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      final isDone = data['isDone'] == true;
+      final title = (data['title'] ?? '').toString().toLowerCase();
+      final isDone = data['isDone'] ?? false;
       if (filter == TodoFilterStatus.completed && !isDone) return false;
       if (filter == TodoFilterStatus.pending && isDone) return false;
-      return true;
+      return title.contains(query.toLowerCase());
     }).toList();
 
-    // 2. Filter by Search Query
-    if (query.isNotEmpty) {
-      list = list.where((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        final title = (data['title'] ?? '').toString().toLowerCase();
-        return title.contains(query.toLowerCase());
-      }).toList();
-    }
-
-    // 3. Sort
     list.sort((a, b) {
       final dataA = a.data() as Map<String, dynamic>;
       final dataB = b.data() as Map<String, dynamic>;
-
       switch (sort) {
-        case TodoSortOption.aToZ:
-          return (dataA['title'] ?? '').toString().compareTo(dataB['title'] ?? '');
-        case TodoSortOption.zToA:
-          return (dataB['title'] ?? '').toString().compareTo(dataA['title'] ?? '');
+        case TodoSortOption.aToZ: return (dataA['title'] ?? '').toString().compareTo(dataB['title'] ?? '');
+        case TodoSortOption.zToA: return (dataB['title'] ?? '').toString().compareTo(dataA['title'] ?? '');
         case TodoSortOption.oldest:
           final tA = (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
           final tB = (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
@@ -153,9 +130,16 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
           final tA = (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
           final tB = (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
           return tB.compareTo(tA);
+        // ✅ RESTORED: Urgency Sort
+        case TodoSortOption.urgency:
+          final tA = (dataA['deadline'] as Timestamp?)?.toDate();
+          final tB = (dataB['deadline'] as Timestamp?)?.toDate();
+          if (tA == null && tB == null) return 0;
+          if (tA == null) return 1;
+          if (tB == null) return -1;
+          return tA.compareTo(tB);
       }
     });
-
     return list;
   }
 
@@ -164,14 +148,13 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     await _db.collection('users').doc(_uid).collection('todos').add({
       'title': event.title,
       'isDone': false,
+      'deadline': event.deadline, // ✅ Save Deadline
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
   Future<void> _onToggleRequested(TodoToggleRequested event, Emitter<TodoState> emit) async {
-    await _db.collection('users').doc(_uid).collection('todos').doc(event.todoId).update({
-      'isDone': event.value,
-    });
+    await _db.collection('users').doc(_uid).collection('todos').doc(event.todoId).update({'isDone': event.value});
   }
 
   Future<void> _onDeleteRequested(TodoDeleteRequested event, Emitter<TodoState> emit) async {

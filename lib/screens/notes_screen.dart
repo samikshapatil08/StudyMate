@@ -10,11 +10,13 @@ class NotesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppTheme.bgLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
-          /// 🔹 HEADER ROW (Title + Sort + Add)
+          /// 🔹 HEADER ROW
           Padding(
             padding: const EdgeInsets.only(right: 8.0, top: 8.0),
             child: Row(
@@ -26,35 +28,48 @@ class NotesScreen extends StatelessWidget {
                     "Your Notes",
                     style: GoogleFonts.inter(
                       fontSize: 18,
-                      color: AppTheme.textPrimary,
+                      color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
                 ),
-                
+
                 /// 🔽 SORT & FILTER BUTTON
                 BlocBuilder<NotesBloc, NotesState>(
                   builder: (context, state) {
-                    // Defaults
-                    var currentSort = NoteSortOption.newest;
-                    var currentFilter = NoteFilterOption.all;
-                    
+                    NoteSortOption currentSort = NoteSortOption.newest;
+                    NoteFilterOption currentFilter = NoteFilterOption.all;
+
                     if (state is NotesLoaded) {
                       currentSort = state.sortOption;
                       currentFilter = state.filterOption;
                     }
 
                     return PopupMenuButton<dynamic>(
-                      icon: const Icon(Icons.sort, color: AppTheme.textSecondary),
+                      icon: Icon(Icons.sort, color: theme.iconTheme.color),
+                      color: theme.cardColor,
                       onSelected: (value) {
                         if (value is NoteSortOption) {
-                          context.read<NotesBloc>().add(NotesSortChanged(value));
+                          context.read<NotesBloc>().add(
+                            NotesSortChanged(value),
+                          );
                         } else if (value is NoteFilterOption) {
-                          context.read<NotesBloc>().add(NotesFilterChanged(value));
+                          context.read<NotesBloc>().add(
+                            NotesFilterChanged(value),
+                          );
                         }
                       },
                       itemBuilder: (context) => [
                         // --- SORTING SECTION ---
-                        const PopupMenuItem(enabled: false, child: Text("SORT BY", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        const PopupMenuItem(
+                          enabled: false,
+                          child: Text(
+                            "SORT BY",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                         CheckedPopupMenuItem(
                           value: NoteSortOption.newest,
                           checked: currentSort == NoteSortOption.newest,
@@ -79,7 +94,16 @@ class NotesScreen extends StatelessWidget {
                         const PopupMenuDivider(),
 
                         // --- FILTER SECTION ---
-                        const PopupMenuItem(enabled: false, child: Text("FILTER", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        const PopupMenuItem(
+                          enabled: false,
+                          child: Text(
+                            "FILTER",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                         CheckedPopupMenuItem(
                           value: NoteFilterOption.all,
                           checked: currentFilter == NoteFilterOption.all,
@@ -88,7 +112,7 @@ class NotesScreen extends StatelessWidget {
                         CheckedPopupMenuItem(
                           value: NoteFilterOption.hasImage,
                           checked: currentFilter == NoteFilterOption.hasImage,
-                          child: const Text("Has Image"),
+                          child: const Text("Has Images"),
                         ),
                         CheckedPopupMenuItem(
                           value: NoteFilterOption.textOnly,
@@ -104,11 +128,13 @@ class NotesScreen extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => _showNoteDialog(context, null),
                   icon: const Icon(Icons.add, color: Colors.red),
-                  label: Text("Add",
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red,
-                      )),
+                  label: Text(
+                    "Add",
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.red,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -119,17 +145,22 @@ class NotesScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Container(
               decoration: BoxDecoration(
-                color: AppTheme.cardWhite,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
-                onChanged: (val) {
-                  context.read<NotesBloc>().add(NotesSearchChanged(val));
-                },
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                onChanged: (val) =>
+                    context.read<NotesBloc>().add(NotesSearchChanged(val)),
                 decoration: InputDecoration(
                   hintText: "Search notes...",
-                  hintStyle: GoogleFonts.inter(color: AppTheme.textSecondary),
-                  prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+                  hintStyle: GoogleFonts.inter(
+                    color: theme.textTheme.bodyMedium?.color,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: theme.textTheme.bodyMedium?.color,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(14),
                 ),
@@ -141,7 +172,6 @@ class NotesScreen extends StatelessWidget {
           Flexible(
             child: BlocBuilder<NotesBloc, NotesState>(
               builder: (context, state) {
-                // HANDLE STATES
                 List<dynamic> notes = [];
                 if (state is NotesLoaded) {
                   notes = state.filteredNotes;
@@ -151,14 +181,19 @@ class NotesScreen extends StatelessWidget {
                   notes = state.filteredNotes;
                 } else if (state is NoteAttachmentUploadFailure) {
                   notes = state.filteredNotes;
-                } else if (state is NotesLoading || state is NotesInitial) {
+                } else {
                   return const Center(child: CircularProgressIndicator());
-                } else if (state is NotesError) {
-                  return Center(child: Text(state.message));
                 }
 
                 if (notes.isEmpty) {
-                  return Center(child: Text("No notes found", style: GoogleFonts.inter()));
+                  return Center(
+                    child: Text(
+                      "No notes found",
+                      style: GoogleFonts.inter(
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                  );
                 }
 
                 return GridView.builder(
@@ -172,7 +207,9 @@ class NotesScreen extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final note = notes[index];
                     final data = note.data() as Map<String, dynamic>;
-                    final attachments = List<Map<String, dynamic>>.from(data['attachments'] ?? []);
+                    final attachments = List<Map<String, dynamic>>.from(
+                      data['attachments'] ?? [],
+                    );
 
                     return GestureDetector(
                       onTap: () {
@@ -191,7 +228,9 @@ class NotesScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: AppTheme().colorPalette[index % AppTheme().colorPalette.length],
+                          color:
+                              AppTheme().colorPalette[index %
+                                  AppTheme().colorPalette.length],
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: Column(
@@ -220,15 +259,22 @@ class NotesScreen extends StatelessWidget {
                               const Spacer(),
                               Row(
                                 children: [
-                                  const Icon(Icons.attachment, size: 16, color: Colors.white70),
+                                  const Icon(
+                                    Icons.attachment,
+                                    size: 16,
+                                    color: Colors.white70,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     "${attachments.length}",
-                                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 ],
-                              )
-                            ]
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -243,13 +289,19 @@ class NotesScreen extends StatelessWidget {
     );
   }
 
-  // 🛠 Unified Dialog for Add/Edit
-  void _showNoteDialog(BuildContext context, Map<String, dynamic>? existingData) {
-    final titleController = TextEditingController(text: existingData?['title'] ?? '');
-    final contentController = TextEditingController(text: existingData?['content'] ?? '');
-    
-    List<Map<String, dynamic>> currentAttachments = 
-        existingData != null ? List<Map<String, dynamic>>.from(existingData['attachments'] ?? []) : [];
+  void _showNoteDialog(
+    BuildContext context,
+    Map<String, dynamic>? existingData,
+  ) {
+    final titleController = TextEditingController(
+      text: existingData?['title'] ?? '',
+    );
+    final contentController = TextEditingController(
+      text: existingData?['content'] ?? '',
+    );
+    List<Map<String, dynamic>> currentAttachments = existingData != null
+        ? List<Map<String, dynamic>>.from(existingData['attachments'] ?? [])
+        : [];
 
     showDialog(
       context: context,
@@ -259,6 +311,7 @@ class NotesScreen extends StatelessWidget {
           value: BlocProvider.of<NotesBloc>(context),
           child: StatefulBuilder(
             builder: (context, setState) {
+              final theme = Theme.of(context);
               return BlocListener<NotesBloc, NotesState>(
                 listener: (context, state) {
                   if (state is NoteAttachmentUploadSuccess) {
@@ -271,116 +324,124 @@ class NotesScreen extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Attachment uploaded!")),
                     );
-                  } else if (state is NoteAttachmentUploadFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message)),
-                    );
                   }
                 },
                 child: AlertDialog(
-                  title: Text(existingData == null ? "New Note" : "Edit Note", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                  content: SizedBox(
-                    width: double.maxFinite,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextField(controller: titleController, decoration: const InputDecoration(labelText: "Title")),
-                        TextField(controller: contentController, decoration: const InputDecoration(labelText: "Content"), maxLines: 3),
-                        const SizedBox(height: 16),
-                        
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text("Attachments:", style: TextStyle(fontWeight: FontWeight.bold)),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.image, color: AppTheme.primaryPurple),
-                                  onPressed: () => _pickFile(context, FileType.image, 'image'),
+                  title: Text(
+                    existingData == null ? "New Note" : "Edit Note",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration: const InputDecoration(labelText: "Title"),
+                      ),
+                      TextField(
+                        controller: contentController,
+                        decoration: const InputDecoration(labelText: "Content"),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text("Attachments:"),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.image,
+                                  color: AppTheme.primaryPurple,
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.picture_as_pdf, color: AppTheme.accentRed),
-                                  onPressed: () => _pickFile(context, FileType.custom, 'pdf'),
+                                onPressed: () =>
+                                    _pickFile(context, FileType.image, 'image'),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.picture_as_pdf,
+                                  color: AppTheme.accentRed,
                                 ),
-                              ],
-                            )
-                          ],
-                        ),
-                        
-                        if (currentAttachments.isNotEmpty)
-                          SizedBox(
-                            height: 60,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: currentAttachments.length,
-                              itemBuilder: (context, index) {
-                                final att = currentAttachments[index];
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  width: 60,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(8),
-                                    image: att['type'] == 'image' 
-                                      ? DecorationImage(image: NetworkImage(att['url']), fit: BoxFit.cover)
+                                onPressed: () =>
+                                    _pickFile(context, FileType.custom, 'pdf'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      if (currentAttachments.isNotEmpty)
+                        SizedBox(
+                          height: 60,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: currentAttachments.length,
+                            itemBuilder: (context, index) {
+                              final att = currentAttachments[index];
+                              return Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                width: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: att['type'] == 'image'
+                                      ? DecorationImage(
+                                          image: NetworkImage(att['url']),
+                                          fit: BoxFit.cover,
+                                        )
                                       : null,
-                                  ),
-                                  child: Stack(
-                                    children: [
-                                      if (att['type'] == 'pdf')
-                                        const Center(child: Icon(Icons.picture_as_pdf, color: Colors.red, size: 30)),
-                                      Positioned(
-                                        right: 0, top: 0,
-                                        child: InkWell(
-                                          onTap: () => setState(() => currentAttachments.removeAt(index)),
-                                          child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white)),
+                                ),
+                                child: att['type'] == 'pdf'
+                                    ? const Center(
+                                        child: Icon(
+                                          Icons.picture_as_pdf,
+                                          color: Colors.red,
                                         ),
                                       )
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                        BlocBuilder<NotesBloc, NotesState>(
-                          builder: (context, state) {
-                            if (state is NoteAttachmentUploading) {
-                              return const Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: LinearProgressIndicator(),
+                                    : null,
                               );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        )
-                      ],
-                    ),
+                            },
+                          ),
+                        ),
+                      BlocBuilder<NotesBloc, NotesState>(
+                        builder: (context, state) =>
+                            state is NoteAttachmentUploading
+                            ? const LinearProgressIndicator()
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: const Text("Cancel"),
                     ),
-                    BlocBuilder<NotesBloc, NotesState>(
-                      builder: (context, state) {
-                        bool isUploading = state is NoteAttachmentUploading;
-                        return TextButton(
-                          onPressed: isUploading ? null : () {
-                            if (existingData == null) {
-                              context.read<NotesBloc>().add(
-                                NotesAddRequested(titleController.text, contentController.text, attachments: currentAttachments),
-                              );
-                            } else {
-                              context.read<NotesBloc>().add(
-                                NotesUpdateRequested(existingData['id'], titleController.text, contentController.text, attachments: currentAttachments),
-                              );
-                            }
-                            Navigator.pop(context);
-                          },
-                          child: Text(existingData == null ? "Save" : "Update"),
-                        );
+                    TextButton(
+                      onPressed: () {
+                        if (existingData == null) {
+                          context.read<NotesBloc>().add(
+                            NotesAddRequested(
+                              titleController.text,
+                              contentController.text,
+                              attachments: currentAttachments,
+                            ),
+                          );
+                        } else {
+                          context.read<NotesBloc>().add(
+                            NotesUpdateRequested(
+                              existingData['id'],
+                              titleController.text,
+                              contentController.text,
+                              attachments: currentAttachments,
+                            ),
+                          );
+                        }
+                        Navigator.pop(context);
                       },
+                      child: Text(existingData == null ? "Save" : "Update"),
                     ),
                   ],
                 ),
@@ -392,25 +453,27 @@ class NotesScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _pickFile(BuildContext context, FileType type, String customType) async {
+  Future<void> _pickFile(
+    BuildContext context,
+    FileType type,
+    String customType,
+  ) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: type,
       allowedExtensions: type == FileType.custom ? ['pdf'] : null,
     );
-
+    if (!context.mounted) return;
     if (result != null && result.files.single.path != null) {
-      // ignore: use_build_context_synchronously
       context.read<NotesBloc>().add(
         NotesUploadAttachmentRequested(
-          filePath: result.files.single.path!, 
-          fileType: customType
-        )
+          filePath: result.files.single.path!,
+          fileType: customType,
+        ),
       );
     }
   }
 }
 
-// 📌 NOTE DETAIL SCREEN
 class NoteDetailScreen extends StatelessWidget {
   final String noteId;
   final String title;
@@ -427,10 +490,13 @@ class NoteDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppTheme.bgLight,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: theme.appBarTheme.backgroundColor,
         title: const Text("Note"),
+        iconTheme: theme.iconTheme,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -450,57 +516,86 @@ class NoteDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
             const SizedBox(height: 16),
-            Text(content, style: const TextStyle(fontSize: 16)),
+            Text(
+              content,
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
             const SizedBox(height: 24),
-            
             if (attachments.isNotEmpty) ...[
               const Divider(),
-              const Text("Attachments", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+              const Text(
+                "Attachments",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 10,
-                runSpacing: 10,
                 children: attachments.map((att) {
                   return GestureDetector(
                     onTap: () {
                       if (att['type'] == 'image') {
-                        showDialog(context: context, builder: (_) => Dialog(child: Image.network(att['url'])));
+                        showDialog(
+                          context: context,
+                          builder: (_) =>
+                              Dialog(child: Image.network(att['url'])),
+                        );
                       }
                     },
                     child: Container(
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                        image: att['type'] == 'image' 
-                            ? DecorationImage(image: NetworkImage(att['url']), fit: BoxFit.cover)
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                        image: att['type'] == 'image'
+                            ? DecorationImage(
+                                image: NetworkImage(att['url']),
+                                fit: BoxFit.cover,
+                              )
                             : null,
                       ),
-                      child: att['type'] == 'pdf' 
-                          ? const Center(child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [Icon(Icons.picture_as_pdf, color: Colors.red, size: 40), Text("PDF", style: TextStyle(fontSize: 10))],
-                            ))
+                      child: att['type'] == 'pdf'
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.picture_as_pdf, color: Colors.red),
+                                  Text("PDF", style: TextStyle(fontSize: 10)),
+                                ],
+                              ),
+                            )
                           : null,
                     ),
                   );
                 }).toList(),
-              )
-            ]
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
+  // ✅ FIXED: Full Edit Dialog with Add/Remove Attachment Support
   void _editNoteDialog(BuildContext context) {
+    final theme = Theme.of(context);
     final titleController = TextEditingController(text: title);
     final contentController = TextEditingController(text: content);
-    List<Map<String, dynamic>> currentAttachments = List.from(attachments);
+    // Deep copy to allow editing without affecting original until saved
+    List<Map<String, dynamic>> currentAttachments =
+        List<Map<String, dynamic>>.from(attachments);
 
     showDialog(
       context: context,
@@ -522,42 +617,68 @@ class NoteDetailScreen extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text("Attachment uploaded!")),
                     );
-                  } else if (state is NoteAttachmentUploadFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message)),
-                    );
                   }
                 },
                 child: AlertDialog(
-                  title: Text("Edit Note", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                  content: SizedBox(
-                    width: double.maxFinite,
+                  title: Text(
+                    "Edit Note",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: theme.textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  content: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextField(controller: titleController, decoration: const InputDecoration(labelText: "Title")),
-                        TextField(controller: contentController, decoration: const InputDecoration(labelText: "Content"), maxLines: 3),
+                        TextField(
+                          controller: titleController,
+                          decoration: const InputDecoration(labelText: "Title"),
+                        ),
+                        TextField(
+                          controller: contentController,
+                          decoration: const InputDecoration(
+                            labelText: "Content",
+                          ),
+                          maxLines: 3,
+                        ),
                         const SizedBox(height: 16),
-                        
+
+                        // 📎 ATTACHMENT BUTTONS (Restored)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Attachments:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text("Attachments:"),
                             Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.image, color: AppTheme.primaryPurple),
-                                  onPressed: () => _pickFile(context, FileType.image, 'image'),
+                                  icon: const Icon(
+                                    Icons.image,
+                                    color: AppTheme.primaryPurple,
+                                  ),
+                                  onPressed: () => _pickFile(
+                                    context,
+                                    FileType.image,
+                                    'image',
+                                  ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.picture_as_pdf, color: AppTheme.accentRed),
-                                  onPressed: () => _pickFile(context, FileType.custom, 'pdf'),
+                                  icon: const Icon(
+                                    Icons.picture_as_pdf,
+                                    color: AppTheme.accentRed,
+                                  ),
+                                  onPressed: () => _pickFile(
+                                    context,
+                                    FileType.custom,
+                                    'pdf',
+                                  ),
                                 ),
                               ],
-                            )
+                            ),
                           ],
                         ),
-                        
+
+                        // 📋 ATTACHMENT LIST (Restored with Delete)
                         if (currentAttachments.isNotEmpty)
                           SizedBox(
                             height: 60,
@@ -572,21 +693,45 @@ class NoteDetailScreen extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: Colors.grey[200],
                                     borderRadius: BorderRadius.circular(8),
-                                    image: att['type'] == 'image' 
-                                      ? DecorationImage(image: NetworkImage(att['url']), fit: BoxFit.cover)
-                                      : null,
+                                    image: att['type'] == 'image'
+                                        ? DecorationImage(
+                                            image: NetworkImage(att['url']),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
                                   ),
                                   child: Stack(
                                     children: [
                                       if (att['type'] == 'pdf')
-                                        const Center(child: Icon(Icons.picture_as_pdf, color: Colors.red, size: 30)),
-                                      Positioned(
-                                        right: 0, top: 0,
-                                        child: InkWell(
-                                          onTap: () => setState(() => currentAttachments.removeAt(index)),
-                                          child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white)),
+                                        const Center(
+                                          child: Icon(
+                                            Icons.picture_as_pdf,
+                                            color: Colors.red,
+                                          ),
                                         ),
-                                      )
+                                      // ❌ Delete Attachment Button
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              currentAttachments.removeAt(
+                                                index,
+                                              );
+                                            });
+                                          },
+                                          child: const CircleAvatar(
+                                            radius: 10,
+                                            backgroundColor: Colors.red,
+                                            child: Icon(
+                                              Icons.close,
+                                              size: 12,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 );
@@ -595,16 +740,11 @@ class NoteDetailScreen extends StatelessWidget {
                           ),
 
                         BlocBuilder<NotesBloc, NotesState>(
-                          builder: (context, state) {
-                            if (state is NoteAttachmentUploading) {
-                              return const Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: LinearProgressIndicator(),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
-                        )
+                          builder: (context, state) =>
+                              state is NoteAttachmentUploading
+                              ? const LinearProgressIndicator()
+                              : const SizedBox.shrink(),
+                        ),
                       ],
                     ),
                   ),
@@ -613,25 +753,20 @@ class NoteDetailScreen extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                       child: const Text("Cancel"),
                     ),
-                    BlocBuilder<NotesBloc, NotesState>(
-                      builder: (context, state) {
-                        bool isUploading = state is NoteAttachmentUploading;
-                        return TextButton(
-                          onPressed: isUploading ? null : () {
-                            context.read<NotesBloc>().add(
-                              NotesUpdateRequested(
-                                noteId,
-                                titleController.text,
-                                contentController.text,
-                                attachments: currentAttachments
-                              ),
-                            );
-                            Navigator.pop(context); // Close dialog
-                            Navigator.pop(context); // Back to list
-                          },
-                          child: const Text("Update"),
+                    TextButton(
+                      onPressed: () {
+                        context.read<NotesBloc>().add(
+                          NotesUpdateRequested(
+                            noteId,
+                            titleController.text,
+                            contentController.text,
+                            attachments: currentAttachments,
+                          ),
                         );
+                        Navigator.pop(context); // Close dialog
+                        Navigator.pop(context); // Return to list
                       },
+                      child: const Text("Update"),
                     ),
                   ],
                 ),
@@ -643,19 +778,23 @@ class NoteDetailScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _pickFile(BuildContext context, FileType type, String customType) async {
+  // ✅ SHARED: File Picker Logic
+  Future<void> _pickFile(
+    BuildContext context,
+    FileType type,
+    String customType,
+  ) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: type,
       allowedExtensions: type == FileType.custom ? ['pdf'] : null,
     );
-
+    if (!context.mounted) return;
     if (result != null && result.files.single.path != null) {
-      // ignore: use_build_context_synchronously
       context.read<NotesBloc>().add(
         NotesUploadAttachmentRequested(
-          filePath: result.files.single.path!, 
-          fileType: customType
-        )
+          filePath: result.files.single.path!,
+          fileType: customType,
+        ),
       );
     }
   }

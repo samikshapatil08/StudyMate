@@ -36,21 +36,15 @@ class NotesSortChanged extends NotesEvent {
   NotesSortChanged(this.option);
 }
 
-// ✅ NEW: Filter Event
+// ✅ ADDED: Filter Event
 class NotesFilterChanged extends NotesEvent {
   final NoteFilterOption option;
   NotesFilterChanged(this.option);
 }
 
-// CLOUDINARY EVENTS
 class NotesUploadAttachmentRequested extends NotesEvent {
   final String filePath;
-  final String fileType;
+  final String fileType; 
 
   NotesUploadAttachmentRequested({required this.filePath, required this.fileType});
-}
-
-class NotesRemoveAttachmentRequested extends NotesEvent {
-  final String attachmentUrl;
-  NotesRemoveAttachmentRequested(this.attachmentUrl);
 }

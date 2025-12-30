@@ -1,6 +1,7 @@
 part of 'todo_bloc.dart';
 
-enum TodoSortOption { newest, oldest, aToZ, zToA }
+// ✅ RESTORED: 'urgency' sort option
+enum TodoSortOption { newest, oldest, aToZ, zToA, urgency }
 enum TodoFilterStatus { all, completed, pending }
 
 abstract class TodoState {}
@@ -15,6 +16,8 @@ class TodosLoaded extends TodoState {
   final String searchQuery;
   final TodoSortOption sortOption;
   final TodoFilterStatus filterStatus;
+  // ✅ RESTORED: View State
+  final bool isCalendarView;
 
   TodosLoaded({
     required this.allTodos,
@@ -22,6 +25,7 @@ class TodosLoaded extends TodoState {
     this.searchQuery = '',
     this.sortOption = TodoSortOption.newest,
     this.filterStatus = TodoFilterStatus.all,
+    this.isCalendarView = false,
   });
 }
 

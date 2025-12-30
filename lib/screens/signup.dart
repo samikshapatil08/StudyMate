@@ -14,16 +14,13 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   bool showPassword = false;
   bool showConfirmPassword = false;
 
-  // 🔐 Password strength logic (UI Logic, stays in UI or Utility, acceptable here for identical UI)
   String get passwordStrength {
     final password = passwordController.text;
-
     if (password.length < 6) return "Weak";
     if (password.length < 10) return "Medium";
     return "Strong";
@@ -31,12 +28,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Color get strengthColor {
     switch (passwordStrength) {
-      case "Medium":
-        return AppTheme.accentYellow;
-      case "Strong":
-        return AppTheme.accentGreen;
-      default:
-        return AppTheme.accentRed;
+      case "Medium": return AppTheme.accentYellow;
+      case "Strong": return AppTheme.accentGreen;
+      default: return AppTheme.accentRed;
     }
   }
 
@@ -58,22 +52,23 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // ✅
+
     return Scaffold(
-      backgroundColor: AppTheme.bgLight,
+      backgroundColor: theme.scaffoldBackgroundColor, // ✅
       appBar: AppBar(
         title: Text(
           "Create Account",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
+            color: theme.textTheme.bodyLarge?.color, // ✅
           ),
         ),
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            Navigator.pop(context); // Go back to Login (or handled by AuthWrapper if structured differently, but current flow pops)
-            // Note: Original code popped context on success.
+            Navigator.pop(context); 
           }
         },
         builder: (context, state) {
@@ -86,7 +81,7 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardWhite,
+                  color: theme.cardColor, // ✅
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
@@ -98,12 +93,11 @@ class _SignupScreenState extends State<SignupScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: theme.textTheme.bodyLarge?.color, // ✅
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    /// Email
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -118,7 +112,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    /// Password
                     TextField(
                       controller: passwordController,
                       obscureText: !showPassword,
@@ -131,9 +124,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            showPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                            showPassword ? Icons.visibility_off : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -146,13 +137,12 @@ class _SignupScreenState extends State<SignupScreen> {
 
                     const SizedBox(height: 8),
 
-                    /// Password strength indicator
                     Row(
                       children: [
                         Text(
                           "Strength: ",
                           style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary,
+                            color: theme.textTheme.bodyMedium?.color, // ✅
                             fontSize: 13,
                           ),
                         ),
@@ -169,7 +159,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
                     const SizedBox(height: 16),
 
-                    /// Confirm Password
                     TextField(
                       controller: confirmPasswordController,
                       obscureText: !showConfirmPassword,
@@ -182,9 +171,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            showConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                            showConfirmPassword ? Icons.visibility_off : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -209,7 +196,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
                     const SizedBox(height: 20),
 
-                    /// Create Account Button
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
@@ -221,12 +207,9 @@ class _SignupScreenState extends State<SignupScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed:
-                            isFormValid && !isLoading ? _signup : null,
+                        onPressed: isFormValid && !isLoading ? _signup : null,
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
+                            ? const CircularProgressIndicator(color: Colors.white)
                             : Text(
                                 "Create Account",
                                 style: GoogleFonts.inter(

@@ -6,10 +6,12 @@ import '../blocs/auth/auth_bloc.dart';
 import '../blocs/notes/notes_bloc.dart';
 import '../blocs/todo/todo_bloc.dart';
 import '../blocs/chat/chat_bloc.dart';
+import '../blocs/theme/theme_bloc.dart';
 import 'chat_screen.dart';
 import 'login.dart';
 import 'notes_screen.dart';
 import 'todo_screen.dart';
+import 'fun/fun_home_screen.dart'; // ✅ Correct Import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,16 +23,23 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    NotesScreen(),
-    TodoScreen(),
-    ChatScreen(),
+  // ✅ 4 Screens (Removed 'const' to allow dynamic widgets)
+  final List<Widget> _screens = [
+    const NotesScreen(),
+    const TodoScreen(),
+    const ChatScreen(),
+    const FunHomeScreen(), 
   ];
 
   @override
   void initState() {
     super.initState();
-    // Initialize data streams when Home loads
+    // Load Theme
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<ThemeBloc>().add(ThemeLoadRequested(authState.uid));
+    }
+    // Init Data
     context.read<NotesBloc>().add(NotesSubscriptionRequested());
     context.read<TodoBloc>().add(TodosSubscriptionRequested());
     context.read<ChatBloc>().add(ChatSubscriptionRequested());
@@ -44,6 +53,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthUnauthenticated) {
@@ -54,63 +65,77 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        
+        // ✅ RESTORED: AppBar with Toggle & Logout
         appBar: AppBar(
+          backgroundColor: theme.appBarTheme.backgroundColor,
+          elevation: 0,
           title: Text(
             "StudyMate",
-            style: GoogleFonts.poppins(color: AppTheme.primaryPurple),
+            style: GoogleFonts.poppins(
+              color: AppTheme.primaryPurple, 
+              fontWeight: FontWeight.bold
+            ),
           ),
           actions: [
+            // Theme Toggle
+            BlocBuilder<ThemeBloc, ThemeState>(
+              builder: (context, state) {
+                final isDark = state.themeMode == ThemeMode.dark;
+                return IconButton(
+                  icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                  color: theme.iconTheme.color,
+                  onPressed: () {
+                    final authState = context.read<AuthBloc>().state;
+                    if (authState is AuthAuthenticated) {
+                      context.read<ThemeBloc>().add(ThemeToggleRequested(authState.uid));
+                    }
+                  },
+                );
+              },
+            ),
+            // Logout
             IconButton(
               icon: const Icon(Icons.logout),
+              color: theme.iconTheme.color,
               onPressed: () {
                 context.read<AuthBloc>().add(AuthLogoutRequested());
               },
             ),
           ],
         ),
-        body: _screens[_selectedIndex],
+        
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _screens,
+        ),
+        
         extendBody: true,
 
-        /// 🌟 Custom Floating Bottom Navigation
+        // ✅ RESTORED: 4-Item Navigation Bar
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Container(
             height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.cardWhite,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(22),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Colors.black38,
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 16,
-                  offset: Offset(0, 6),
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _NavItem(
-                  icon: Icons.home,
-                  label: "Home",
-                  index: 0,
-                  selectedIndex: _selectedIndex,
-                  onTap: _onTap,
-                ),
-                _NavItem(
-                  icon: Icons.check_circle,
-                  label: "To-Dos",
-                  index: 1,
-                  selectedIndex: _selectedIndex,
-                  onTap: _onTap,
-                ),
-                _NavItem(
-                  icon: Icons.chat_bubble,
-                  label: "Chat",
-                  index: 2,
-                  selectedIndex: _selectedIndex,
-                  onTap: _onTap,
-                ),
+                _NavItem(icon: Icons.edit_outlined, label: "Notes", index: 0, selectedIndex: _selectedIndex, onTap: _onTap),
+                _NavItem(icon: Icons.check_circle_outline, label: "To-Do", index: 1, selectedIndex: _selectedIndex, onTap: _onTap),
+                _NavItem(icon: Icons.chat_bubble_outline, label: "Chat", index: 2, selectedIndex: _selectedIndex, onTap: _onTap),
+                _NavItem(icon: Icons.celebration_outlined, label: "Fun", index: 3, selectedIndex: _selectedIndex, onTap: _onTap),
               ],
             ),
           ),
@@ -139,11 +164,17 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Dynamic inactive color
+    final inactiveColor = theme.brightness == Brightness.dark 
+        ? AppTheme.textSecondaryDark 
+        : AppTheme.textSecondary;
+
     return GestureDetector(
       onTap: () => onTap(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? AppTheme.primaryPurple : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -152,11 +183,11 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 22,
-              color: isActive ? Colors.white : AppTheme.textSecondary,
+              size: 24,
+              color: isActive ? Colors.white : inactiveColor,
             ),
             if (isActive) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: GoogleFonts.inter(

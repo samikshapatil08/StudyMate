@@ -50,6 +50,8 @@ dependencies:
   flutter_image_compress: ^2.4.0
   file_picker: ^10.3.8
   path: ^1.8.3
+  table_calendar: 
+  flutter_slidable:
 
 dev_dependencies:
   flutter_test:

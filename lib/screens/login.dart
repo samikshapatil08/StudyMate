@@ -30,8 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // ✅
+
     return Scaffold(
-      backgroundColor: AppTheme.bgLight,
+      backgroundColor: theme.scaffoldBackgroundColor, // ✅
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
@@ -51,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardWhite,
+                  color: theme.cardColor, // ✅
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
@@ -63,12 +65,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: theme.textTheme.bodyLarge?.color, // ✅
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    /// Email
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -82,7 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    /// Password
                     TextField(
                       controller: passwordController,
                       obscureText: !showPassword,
@@ -95,9 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            showPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                            showPassword ? Icons.visibility_off : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -122,7 +120,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    /// Login Button
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
@@ -134,8 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: isLoading ? null : _login,
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
+                            ? const CircularProgressIndicator(color: Colors.white)
                             : Text(
                                 "Login",
                                 style: GoogleFonts.inter(
@@ -148,14 +144,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 16),
 
-                    /// Signup Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           "Don’t have an account?",
                           style: GoogleFonts.inter(
-                            color: AppTheme.textSecondary,
+                            color: theme.textTheme.bodyMedium?.color, // ✅
                           ),
                         ),
                         TextButton(
