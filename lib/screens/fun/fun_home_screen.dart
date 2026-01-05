@@ -13,60 +13,84 @@ class FunHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final width = MediaQuery.of(context).size.width;
+    final int crossAxisCount = width > 1000
+        ? 4
+        : width > 600
+            ? 3
+            : 2;
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Fun Zone",
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: theme.textTheme.bodyLarge?.color,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Fun Zone",
+                      style: GoogleFonts.inter(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Expanded(
+                  child: GridView.count(
+                    padding: const EdgeInsets.all(16),
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    children: [
+                      _FunCard(
+                        title: "Focus Timer",
+                        icon: Icons.timer,
+                        color: AppTheme.primaryPurple,
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const FocusTimerScreen())),
+                      ),
+                      _FunCard(
+                        title: "Daily Streaks",
+                        icon: Icons.local_fire_department,
+                        color: AppTheme.accentRed,
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const StreaksScreen())),
+                      ),
+                      _FunCard(
+                        title: "Cat Generator",
+                        icon: Icons.pets,
+                        color: AppTheme.secondaryBlue,
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const CatScreen())),
+                      ),
+                      _FunCard(
+                        title: "Useless Facts",
+                        icon: Icons.lightbulb,
+                        color: AppTheme.accentYellow,
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const FactScreen())),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: GridView.count(
-                padding: const EdgeInsets.all(16),
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: [
-                  _FunCard(
-                    title: "Focus Timer",
-                    icon: Icons.timer,
-                    color: AppTheme.primaryPurple,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FocusTimerScreen())),
-                  ),
-                  _FunCard(
-                    title: "Daily Streaks",
-                    icon: Icons.local_fire_department,
-                    color: AppTheme.accentRed,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StreaksScreen())),
-                  ),
-                  _FunCard(
-                    title: "Cat Generator",
-                    icon: Icons.pets,
-                    color: AppTheme.secondaryBlue,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CatScreen())),
-                  ),
-                  _FunCard(
-                    title: "Useless Facts",
-                    icon: Icons.lightbulb,
-                    color: AppTheme.accentYellow,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FactScreen())),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

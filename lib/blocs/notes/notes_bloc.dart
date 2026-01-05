@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 part 'notes_event.dart';
 part 'notes_state.dart';
@@ -18,10 +16,10 @@ class _NotesUpdated extends NotesEvent {
 class NotesBloc extends Bloc<NotesEvent, NotesState> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   final CloudinaryPublic _cloudinary = CloudinaryPublic(
-    'ddkhgfnck', 
-    'notes_preset', 
+    'ddkhgfnck',
+    'notes_preset',
     cache: false,
   );
 
@@ -34,7 +32,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     on<NotesDeleteRequested>(_onDeleteRequested);
     on<NotesSearchChanged>(_onSearchChanged);
     on<NotesSortChanged>(_onSortChanged);
-    on<NotesFilterChanged>(_onFilterChanged); // ✅ Register Handler
+    on<NotesFilterChanged>(_onFilterChanged);
     on<_NotesUpdated>(_onNotesUpdated);
     on<NotesUploadAttachmentRequested>(_onUploadAttachmentRequested);
   }
@@ -45,15 +43,21 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       NotesSubscriptionRequested event, Emitter<NotesState> emit) async {
     emit(NotesLoading());
     await _notesSubscription?.cancel();
-    _notesSubscription = _db.collection('users').doc(_uid).collection('notes').snapshots().listen((snapshot) {
+    _notesSubscription = _db
+        .collection('users')
+        .doc(_uid)
+        .collection('notes')
+        .snapshots()
+        .listen((snapshot) {
       add(_NotesUpdated(snapshot.docs));
     });
   }
 
-  Future<void> _onNotesUpdated(_NotesUpdated event, Emitter<NotesState> emit) async {
+  Future<void> _onNotesUpdated(
+      _NotesUpdated event, Emitter<NotesState> emit) async {
     String currentQuery = '';
     NoteSortOption currentSort = NoteSortOption.newest;
-    NoteFilterOption currentFilter = NoteFilterOption.all; // Default
+    NoteFilterOption currentFilter = NoteFilterOption.all;
 
     if (state is NotesLoaded) {
       final s = state as NotesLoaded;
@@ -62,10 +66,10 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       currentFilter = s.filterOption;
     }
 
-    // ✅ Apply Filter
-    final filtered = _processList(event.docs, currentQuery, currentSort, currentFilter);
+    final filtered =
+        _processList(event.docs, currentQuery, currentSort, currentFilter);
     emit(NotesLoaded(
-      allNotes: event.docs, 
+      allNotes: event.docs,
       filteredNotes: filtered,
       searchQuery: currentQuery,
       sortOption: currentSort,
@@ -73,57 +77,10 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     ));
   }
 
-  // ✅ Search Handler
-  Future<void> _onSearchChanged(NotesSearchChanged event, Emitter<NotesState> emit) async {
-    final currentState = _getSafeLoadedState(state);
-    if (currentState != null) {
-      final filtered = _processList(currentState.allNotes, event.query, currentState.sortOption, currentState.filterOption);
-      emit(NotesLoaded(
-        allNotes: currentState.allNotes,
-        filteredNotes: filtered,
-        searchQuery: event.query,
-        sortOption: currentState.sortOption,
-        filterOption: currentState.filterOption,
-      ));
-    }
-  }
-
-  // ✅ Sort Handler
-  Future<void> _onSortChanged(NotesSortChanged event, Emitter<NotesState> emit) async {
-    final currentState = _getSafeLoadedState(state);
-    if (currentState != null) {
-      final filtered = _processList(currentState.allNotes, currentState.searchQuery, event.option, currentState.filterOption);
-      emit(NotesLoaded(
-        allNotes: currentState.allNotes,
-        filteredNotes: filtered,
-        searchQuery: currentState.searchQuery,
-        sortOption: event.option,
-        filterOption: currentState.filterOption,
-      ));
-    }
-  }
-
-  // ✅ Filter Handler
-  Future<void> _onFilterChanged(NotesFilterChanged event, Emitter<NotesState> emit) async {
-    final currentState = _getSafeLoadedState(state);
-    if (currentState != null) {
-      final filtered = _processList(currentState.allNotes, currentState.searchQuery, currentState.sortOption, event.option);
-      emit(NotesLoaded(
-        allNotes: currentState.allNotes,
-        filteredNotes: filtered,
-        searchQuery: currentState.searchQuery,
-        sortOption: currentState.sortOption,
-        filterOption: event.option,
-      ));
-    }
-  }
-
-  // ✅ Upload Logic
   Future<void> _onUploadAttachmentRequested(
       NotesUploadAttachmentRequested event, Emitter<NotesState> emit) async {
-    
     final currentState = _getSafeLoadedState(state);
-    if (currentState == null) return; 
+    if (currentState == null) return;
 
     emit(NoteAttachmentUploading(
       allNotes: currentState.allNotes,
@@ -132,29 +89,10 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     ));
 
     try {
-      File fileToUpload = File(event.filePath);
-
-      if (event.fileType == 'image') {
-        final targetPath = '${event.filePath}_compressed.jpg';
-        try {
-          final compressedFile = await FlutterImageCompress.compressAndGetFile(
-            event.filePath,
-            targetPath,
-            quality: 70, 
-          );
-          if (compressedFile != null) {
-            fileToUpload = File(compressedFile.path);
-          }
-        } catch (e) {
-          debugPrint("Compression failed: $e");
-        }
-      }
-
       CloudinaryResponse response = await _cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          fileToUpload.path, 
-          resourceType: CloudinaryResourceType.Auto
-        ),
+        CloudinaryFile.fromBytesData(event.fileBytes,
+            identifier: event.fileName,
+            resourceType: CloudinaryResourceType.Auto),
       );
 
       emit(NoteAttachmentUploadSuccess(
@@ -164,7 +102,6 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         filteredNotes: currentState.filteredNotes,
         filterOption: currentState.filterOption,
       ));
-
     } catch (e) {
       debugPrint("Upload Error: $e");
       emit(NoteAttachmentUploadFailure(
@@ -173,8 +110,7 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
         filteredNotes: currentState.filteredNotes,
         filterOption: currentState.filterOption,
       ));
-      
-      // Revert state
+
       emit(NotesLoaded(
         allNotes: currentState.allNotes,
         filteredNotes: currentState.filteredNotes,
@@ -185,9 +121,13 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     }
   }
 
-  // CRUD Operations (No changes needed)
-  Future<void> _onAddRequested(NotesAddRequested event, Emitter<NotesState> emit) async {
-    if (event.title.trim().isEmpty && event.content.trim().isEmpty && event.attachments.isEmpty) return;
+  Future<void> _onAddRequested(
+      NotesAddRequested event, Emitter<NotesState> emit) async {
+    if (event.title.trim().isEmpty &&
+        event.content.trim().isEmpty &&
+        event.attachments.isEmpty) {
+      return;
+    }
     await _db.collection('users').doc(_uid).collection('notes').add({
       'title': event.title,
       'content': event.content,
@@ -196,8 +136,14 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     });
   }
 
-  Future<void> _onUpdateRequested(NotesUpdateRequested event, Emitter<NotesState> emit) async {
-    await _db.collection('users').doc(_uid).collection('notes').doc(event.noteId).update({
+  Future<void> _onUpdateRequested(
+      NotesUpdateRequested event, Emitter<NotesState> emit) async {
+    await _db
+        .collection('users')
+        .doc(_uid)
+        .collection('notes')
+        .doc(event.noteId)
+        .update({
       'title': event.title,
       'content': event.content,
       'attachments': event.attachments,
@@ -205,27 +151,88 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
     });
   }
 
-  Future<void> _onDeleteRequested(NotesDeleteRequested event, Emitter<NotesState> emit) async {
-    await _db.collection('users').doc(_uid).collection('notes').doc(event.noteId).delete();
+  Future<void> _onDeleteRequested(
+      NotesDeleteRequested event, Emitter<NotesState> emit) async {
+    await _db
+        .collection('users')
+        .doc(_uid)
+        .collection('notes')
+        .doc(event.noteId)
+        .delete();
   }
 
-  // Helper
+  Future<void> _onSearchChanged(
+      NotesSearchChanged event, Emitter<NotesState> emit) async {
+    final currentState = _getSafeLoadedState(state);
+    if (currentState != null) {
+      final filtered = _processList(currentState.allNotes, event.query,
+          currentState.sortOption, currentState.filterOption);
+      emit(NotesLoaded(
+          allNotes: currentState.allNotes,
+          filteredNotes: filtered,
+          searchQuery: event.query,
+          sortOption: currentState.sortOption,
+          filterOption: currentState.filterOption));
+    }
+  }
+
+  Future<void> _onSortChanged(
+      NotesSortChanged event, Emitter<NotesState> emit) async {
+    final currentState = _getSafeLoadedState(state);
+    if (currentState != null) {
+      final filtered = _processList(currentState.allNotes,
+          currentState.searchQuery, event.option, currentState.filterOption);
+      emit(NotesLoaded(
+          allNotes: currentState.allNotes,
+          filteredNotes: filtered,
+          searchQuery: currentState.searchQuery,
+          sortOption: event.option,
+          filterOption: currentState.filterOption));
+    }
+  }
+
+  Future<void> _onFilterChanged(
+      NotesFilterChanged event, Emitter<NotesState> emit) async {
+    final currentState = _getSafeLoadedState(state);
+    if (currentState != null) {
+      final filtered = _processList(currentState.allNotes,
+          currentState.searchQuery, currentState.sortOption, event.option);
+      emit(NotesLoaded(
+          allNotes: currentState.allNotes,
+          filteredNotes: filtered,
+          searchQuery: currentState.searchQuery,
+          sortOption: currentState.sortOption,
+          filterOption: event.option));
+    }
+  }
+
   NotesLoaded? _getSafeLoadedState(NotesState state) {
-    if (state is NotesLoaded) return state;
-    if (state is NoteAttachmentUploading) return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes, filterOption: state.filterOption);
-    if (state is NoteAttachmentUploadSuccess) return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes, filterOption: state.filterOption);
-    if (state is NoteAttachmentUploadFailure) return NotesLoaded(allNotes: state.allNotes, filteredNotes: state.filteredNotes, filterOption: state.filterOption);
+    if (state is NotesLoaded) {
+      return state;
+    }
+    if (state is NoteAttachmentUploading) {
+      return NotesLoaded(
+          allNotes: state.allNotes,
+          filteredNotes: state.filteredNotes,
+          filterOption: state.filterOption);
+    }
+    if (state is NoteAttachmentUploadSuccess) {
+      return NotesLoaded(
+          allNotes: state.allNotes,
+          filteredNotes: state.filteredNotes,
+          filterOption: state.filterOption);
+    }
+    if (state is NoteAttachmentUploadFailure) {
+      return NotesLoaded(
+          allNotes: state.allNotes,
+          filteredNotes: state.filteredNotes,
+          filterOption: state.filterOption);
+    }
     return null;
   }
 
-  // ✅ LOGIC: Processing the List
-  List<QueryDocumentSnapshot> _processList(
-    List<QueryDocumentSnapshot> docs, 
-    String query, 
-    NoteSortOption sort,
-    NoteFilterOption filter,
-  ) {
-    // 1. Search Query
+  List<QueryDocumentSnapshot> _processList(List<QueryDocumentSnapshot> docs,
+      String query, NoteSortOption sort, NoteFilterOption filter) {
     var list = docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final title = (data['title'] ?? '').toString().toLowerCase();
@@ -234,37 +241,42 @@ class NotesBloc extends Bloc<NotesEvent, NotesState> {
       return title.contains(search) || content.contains(search);
     }).toList();
 
-    // 2. ✅ Filter (Has Image / Text Only)
     if (filter != NoteFilterOption.all) {
       list = list.where((doc) {
         final data = doc.data() as Map<String, dynamic>;
-        final attachments = List<Map<String, dynamic>>.from(data['attachments'] ?? []);
-        
+        final attachments =
+            List<Map<String, dynamic>>.from(data['attachments'] ?? []);
         if (filter == NoteFilterOption.hasImage) {
-          // Must have at least one image
           return attachments.any((att) => att['type'] == 'image');
-        } else if (filter == NoteFilterOption.textOnly) {
-          // Must have NO attachments (Text Only)
-          return attachments.isEmpty; 
         }
+        if (filter == NoteFilterOption.textOnly) return attachments.isEmpty;
         return true;
       }).toList();
     }
 
-    // 3. Sort
     list.sort((a, b) {
       final dataA = a.data() as Map<String, dynamic>;
       final dataB = b.data() as Map<String, dynamic>;
       switch (sort) {
-        case NoteSortOption.aToZ: return (dataA['title'] ?? '').toString().compareTo(dataB['title'] ?? '');
-        case NoteSortOption.zToA: return (dataB['title'] ?? '').toString().compareTo(dataA['title'] ?? '');
+        case NoteSortOption.aToZ:
+          return (dataA['title'] ?? '')
+              .toString()
+              .compareTo(dataB['title'] ?? '');
+        case NoteSortOption.zToA:
+          return (dataB['title'] ?? '')
+              .toString()
+              .compareTo(dataA['title'] ?? '');
         case NoteSortOption.oldest:
-          final tA = (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
-          final tB = (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
+          final tA =
+              (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
+          final tB =
+              (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
           return tA.compareTo(tB);
         case NoteSortOption.newest:
-          final tA = (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
-          final tB = (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
+          final tA =
+              (dataA['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
+          final tB =
+              (dataB['createdAt'] as Timestamp?)?.toDate() ?? DateTime(0);
           return tB.compareTo(tA);
       }
     });

@@ -11,7 +11,6 @@ class StreaksScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Trigger data fetch on load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StreaksBloc>().add(StreaksSubscriptionRequested());
     });
@@ -25,52 +24,56 @@ class StreaksScreen extends StatelessWidget {
         titleTextStyle: theme.appBarTheme.titleTextStyle,
       ),
       body: Center(
-        child: BlocBuilder<StreaksBloc, StreaksState>(
-          builder: (context, state) {
-            if (state is StreaksLoading || state is StreaksInitial) {
-              return const CircularProgressIndicator();
-            }
-            
-            int streak = 0;
-            if (state is StreaksLoaded) {
-              streak = state.currentStreak;
-            }
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: BlocBuilder<StreaksBloc, StreaksState>(
+            builder: (context, state) {
+              if (state is StreaksLoading || state is StreaksInitial) {
+                return const CircularProgressIndicator();
+              }
 
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.local_fire_department, size: 100, color: AppTheme.accentRed),
-                const SizedBox(height: 20),
-                Text(
-                  "$streak Days",
-                  style: GoogleFonts.inter(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: theme.textTheme.titleLarge?.color,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "Current Streak",
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    color: theme.textTheme.bodyMedium?.color,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    "Keep completing tasks daily to increase your streak!",
-                    textAlign: TextAlign.center,
+              int streak = 0;
+              if (state is StreaksLoaded) {
+                streak = state.currentStreak;
+              }
+
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.local_fire_department,
+                      size: 100, color: AppTheme.accentRed),
+                  const SizedBox(height: 20),
+                  Text(
+                    "$streak Days",
                     style: GoogleFonts.inter(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: theme.textTheme.titleLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "Current Streak",
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
                       color: theme.textTheme.bodyMedium?.color,
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                  const SizedBox(height: 40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      "Keep completing tasks daily to increase your streak!",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: theme.textTheme.bodyMedium?.color,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

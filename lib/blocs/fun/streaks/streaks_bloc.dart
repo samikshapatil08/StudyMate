@@ -13,7 +13,8 @@ class StreaksBloc extends Bloc<StreaksEvent, StreaksState> {
 
   StreaksBloc() : super(StreaksInitial()) {
     on<StreaksSubscriptionRequested>(_onSubscriptionRequested);
-    on<_StreaksUpdated>((event, emit) => emit(StreaksLoaded(event.streakCount)));
+    on<_StreaksUpdated>(
+        (event, emit) => emit(StreaksLoaded(event.streakCount)));
   }
 
   Future<void> _onSubscriptionRequested(
@@ -27,20 +28,20 @@ class StreaksBloc extends Bloc<StreaksEvent, StreaksState> {
         .collection('users')
         .doc(uid)
         .collection('todos')
-        .where('isDone', isEqualTo: true) // Only completed tasks
+        .where('isDone', isEqualTo: true)
         .snapshots()
         .listen((snapshot) {
-      
-      // Calculate Streaks Logic
-      final completedDates = snapshot.docs.map((doc) {
-        final data = doc.data();
-        // Fallback to createdAt as existing schema doesn't strictly have completedAt
-        final timestamp = data['createdAt'] as Timestamp; 
-        final date = timestamp.toDate();
-        return DateTime(date.year, date.month, date.day); // Strip time
-      }).toSet().toList(); // Unique days
+      final completedDates = snapshot.docs
+          .map((doc) {
+            final data = doc.data();
+            final timestamp = data['createdAt'] as Timestamp;
+            final date = timestamp.toDate();
+            return DateTime(date.year, date.month, date.day);
+          })
+          .toSet()
+          .toList();
 
-      completedDates.sort((a, b) => b.compareTo(a)); // Descending order
+      completedDates.sort((a, b) => b.compareTo(a));
 
       int streak = 0;
       if (completedDates.isEmpty) {
@@ -52,19 +53,18 @@ class StreaksBloc extends Bloc<StreaksEvent, StreaksState> {
       final todayDate = DateTime(today.year, today.month, today.day);
       final yesterdayDate = todayDate.subtract(const Duration(days: 1));
 
-      // Check if streak is active (completed today or yesterday)
-      if (completedDates.first.isAtSameMomentAs(todayDate) || 
+      if (completedDates.first.isAtSameMomentAs(todayDate) ||
           completedDates.first.isAtSameMomentAs(yesterdayDate)) {
-        
         streak = 1;
-        DateTime checkDate = completedDates.first.subtract(const Duration(days: 1));
+        DateTime checkDate =
+            completedDates.first.subtract(const Duration(days: 1));
 
         for (int i = 1; i < completedDates.length; i++) {
           if (completedDates[i].isAtSameMomentAs(checkDate)) {
             streak++;
             checkDate = checkDate.subtract(const Duration(days: 1));
           } else {
-            break; // Streak broken
+            break;
           }
         }
       }

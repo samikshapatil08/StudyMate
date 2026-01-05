@@ -5,7 +5,7 @@ part 'timer_event.dart';
 part 'timer_state.dart';
 
 class TimerBloc extends Bloc<TimerEvent, TimerState> {
-  static const int _defaultDuration = 25 * 60; // 25 minutes
+  static const int _defaultDuration = 25 * 60;
   StreamSubscription<int>? _tickerSubscription;
 
   TimerBloc() : super(const TimerInitial(_defaultDuration)) {
@@ -25,7 +25,8 @@ class TimerBloc extends Bloc<TimerEvent, TimerState> {
   void _onStarted(TimerStarted event, Emitter<TimerState> emit) {
     emit(TimerRunInProgress(event.duration));
     _tickerSubscription?.cancel();
-    _tickerSubscription = Stream.periodic(const Duration(seconds: 1), (x) => event.duration - x - 1)
+    _tickerSubscription = Stream.periodic(
+            const Duration(seconds: 1), (x) => event.duration - x - 1)
         .take(event.duration)
         .listen((duration) => add(_TimerTicked(duration: duration)));
   }

@@ -8,7 +8,7 @@ class NotesAddRequested extends NotesEvent {
   final String title;
   final String content;
   final List<Map<String, dynamic>> attachments;
-  
+
   NotesAddRequested(this.title, this.content, {this.attachments = const []});
 }
 
@@ -18,7 +18,8 @@ class NotesUpdateRequested extends NotesEvent {
   final String content;
   final List<Map<String, dynamic>> attachments;
 
-  NotesUpdateRequested(this.noteId, this.title, this.content, {this.attachments = const []});
+  NotesUpdateRequested(this.noteId, this.title, this.content,
+      {this.attachments = const []});
 }
 
 class NotesDeleteRequested extends NotesEvent {
@@ -36,15 +37,18 @@ class NotesSortChanged extends NotesEvent {
   NotesSortChanged(this.option);
 }
 
-// ✅ ADDED: Filter Event
 class NotesFilterChanged extends NotesEvent {
   final NoteFilterOption option;
   NotesFilterChanged(this.option);
 }
 
 class NotesUploadAttachmentRequested extends NotesEvent {
-  final String filePath;
-  final String fileType; 
+  final List<int> fileBytes;
+  final String fileName;
+  final String fileType;
 
-  NotesUploadAttachmentRequested({required this.filePath, required this.fileType});
+  NotesUploadAttachmentRequested(
+      {required this.fileBytes,
+      required this.fileName,
+      required this.fileType});
 }

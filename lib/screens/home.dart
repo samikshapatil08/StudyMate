@@ -11,7 +11,7 @@ import 'chat_screen.dart';
 import 'login.dart';
 import 'notes_screen.dart';
 import 'todo_screen.dart';
-import 'fun/fun_home_screen.dart'; // ✅ Correct Import
+import 'fun/fun_home_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,23 +23,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // ✅ 4 Screens (Removed 'const' to allow dynamic widgets)
   final List<Widget> _screens = [
     const NotesScreen(),
     const TodoScreen(),
     const ChatScreen(),
-    const FunHomeScreen(), 
+    const FunHomeScreen(),
   ];
 
   @override
   void initState() {
     super.initState();
-    // Load Theme
+
     final authState = context.read<AuthBloc>().state;
     if (authState is AuthAuthenticated) {
       context.read<ThemeBloc>().add(ThemeLoadRequested(authState.uid));
     }
-    // Init Data
+
     context.read<NotesBloc>().add(NotesSubscriptionRequested());
     context.read<TodoBloc>().add(TodosSubscriptionRequested());
     context.read<ChatBloc>().add(ChatSubscriptionRequested());
@@ -66,20 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        
-        // ✅ RESTORED: AppBar with Toggle & Logout
         appBar: AppBar(
           backgroundColor: theme.appBarTheme.backgroundColor,
           elevation: 0,
           title: Text(
             "StudyMate",
             style: GoogleFonts.poppins(
-              color: AppTheme.primaryPurple, 
-              fontWeight: FontWeight.bold
-            ),
+                color: AppTheme.primaryPurple, fontWeight: FontWeight.bold),
           ),
           actions: [
-            // Theme Toggle
             BlocBuilder<ThemeBloc, ThemeState>(
               builder: (context, state) {
                 final isDark = state.themeMode == ThemeMode.dark;
@@ -89,13 +83,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     final authState = context.read<AuthBloc>().state;
                     if (authState is AuthAuthenticated) {
-                      context.read<ThemeBloc>().add(ThemeToggleRequested(authState.uid));
+                      context
+                          .read<ThemeBloc>()
+                          .add(ThemeToggleRequested(authState.uid));
                     }
                   },
                 );
               },
             ),
-            // Logout
             IconButton(
               icon: const Icon(Icons.logout),
               color: theme.iconTheme.color,
@@ -105,39 +100,64 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        
         body: IndexedStack(
           index: _selectedIndex,
           children: _screens,
         ),
-        
         extendBody: true,
-
-        // ✅ RESTORED: 4-Item Navigation Bar
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Container(
+                  height: 64,
+                  width: MediaQuery.of(context).size.width - 32,
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _NavItem(
+                          icon: Icons.edit_outlined,
+                          label: "Notes",
+                          index: 0,
+                          selectedIndex: _selectedIndex,
+                          onTap: _onTap),
+                      _NavItem(
+                          icon: Icons.check_circle_outline,
+                          label: "To-Do",
+                          index: 1,
+                          selectedIndex: _selectedIndex,
+                          onTap: _onTap),
+                      _NavItem(
+                          icon: Icons.chat_bubble_outline,
+                          label: "Chat",
+                          index: 2,
+                          selectedIndex: _selectedIndex,
+                          onTap: _onTap),
+                      _NavItem(
+                          icon: Icons.celebration_outlined,
+                          label: "Fun",
+                          index: 3,
+                          selectedIndex: _selectedIndex,
+                          onTap: _onTap),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _NavItem(icon: Icons.edit_outlined, label: "Notes", index: 0, selectedIndex: _selectedIndex, onTap: _onTap),
-                _NavItem(icon: Icons.check_circle_outline, label: "To-Do", index: 1, selectedIndex: _selectedIndex, onTap: _onTap),
-                _NavItem(icon: Icons.chat_bubble_outline, label: "Chat", index: 2, selectedIndex: _selectedIndex, onTap: _onTap),
-                _NavItem(icon: Icons.celebration_outlined, label: "Fun", index: 3, selectedIndex: _selectedIndex, onTap: _onTap),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -165,9 +185,8 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Dynamic inactive color
-    final inactiveColor = theme.brightness == Brightness.dark 
-        ? AppTheme.textSecondaryDark 
+    final inactiveColor = theme.brightness == Brightness.dark
+        ? AppTheme.textSecondaryDark
         : AppTheme.textSecondary;
 
     return GestureDetector(

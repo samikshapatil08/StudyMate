@@ -6,8 +6,7 @@ class TodosSubscriptionRequested extends TodoEvent {}
 
 class TodoAddRequested extends TodoEvent {
   final String title;
-  // ✅ RESTORED: Deadline
-  final DateTime? deadline; 
+  final DateTime? deadline;
   TodoAddRequested(this.title, {this.deadline});
 }
 
@@ -37,5 +36,4 @@ class TodoFilterChanged extends TodoEvent {
   TodoFilterChanged(this.status);
 }
 
-// ✅ RESTORED: View Toggle Event
 class TodoViewToggled extends TodoEvent {}

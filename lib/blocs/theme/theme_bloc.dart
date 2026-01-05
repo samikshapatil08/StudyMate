@@ -17,35 +17,32 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       ThemeLoadRequested event, Emitter<ThemeState> emit) async {
     try {
       final doc = await _db.collection('users').doc(event.uid).get();
-      if (doc.exists && doc.data() != null && doc.data()!.containsKey('isDarkMode')) {
+      if (doc.exists &&
+          doc.data() != null &&
+          doc.data()!.containsKey('isDarkMode')) {
         final isDark = doc.data()!['isDarkMode'] as bool;
         emit(ThemeState(isDark ? ThemeMode.dark : ThemeMode.light));
       } else {
-        // Default to light if no preference saved
         emit(ThemeState(ThemeMode.light));
       }
     } catch (_) {
-      // Fallback
       emit(ThemeState(ThemeMode.light));
     }
   }
 
   Future<void> _onToggleRequested(
       ThemeToggleRequested event, Emitter<ThemeState> emit) async {
-    final newMode = state.themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    final newMode =
+        state.themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
     final isDark = newMode == ThemeMode.dark;
 
-    // 1. Update UI immediately
     emit(ThemeState(newMode));
 
-    // 2. Persist to Firestore
     try {
       await _db.collection('users').doc(event.uid).set(
         {'isDarkMode': isDark},
         SetOptions(merge: true),
       );
-    } catch (_) {
-      // Silent failure on save is acceptable for UI prefs, or log it
-    }
+    } catch (_) {}
   }
 }

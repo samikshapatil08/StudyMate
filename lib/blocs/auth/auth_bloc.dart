@@ -36,7 +36,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(AuthAuthenticated(_auth.currentUser!.uid));
     } on FirebaseAuthException catch (e) {
-      emit(AuthError(e.message ?? 'Login failed'));
+      
+      String message = 'Login failed';
+      if (e.code == 'user-not-found') {
+        message = 'No user found with this email.';
+      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        message = 'Incorrect password. Please try again.';
+      } else if (e.code == 'invalid-email') {
+        message = 'The email address is badly formatted.';
+      } else if (e.code == 'user-disabled') {
+        message = 'This user account has been disabled.';
+      }
+      emit(AuthError(message));
     } catch (_) {
       emit(AuthError('Something went wrong. Try again.'));
     }
@@ -58,12 +69,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       emit(AuthAuthenticated(cred.user!.uid));
     } on FirebaseAuthException catch (e) {
-      emit(AuthError(e.message ?? 'Signup failed'));
+      
+      String message = 'Signup failed';
+      if (e.code == 'email-already-in-use') {
+        message = 'The email address is already in use by another account.';
+      } else if (e.code == 'invalid-email') {
+        message = 'The email address is badly formatted.';
+      } else if (e.code == 'operation-not-allowed') {
+        message = 'Email/password accounts are not enabled.';
+      } else if (e.code == 'weak-password') {
+        message = 'The password is too weak.';
+      }
+      emit(AuthError(message));
     } catch (_) {
       emit(AuthError('Something went wrong. Try again.'));
     }
   }
-
   Future<void> _onLogoutRequested(
       AuthLogoutRequested event, Emitter<AuthState> emit) async {
     await _auth.signOut();

@@ -12,7 +12,7 @@ import 'blocs/fun/timer/timer_bloc.dart';
 import 'blocs/fun/cat/cat_bloc.dart';
 import 'blocs/fun/fact/fact_bloc.dart';
 import 'blocs/fun/streaks/streaks_bloc.dart';
-import 'blocs/theme/theme_bloc.dart'; // ✅ Import ThemeBloc
+import 'blocs/theme/theme_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,15 +33,12 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => NotesBloc()),
         BlocProvider(create: (_) => TodoBloc()),
         BlocProvider(create: (_) => ChatBloc()),
-        // Fun Feature Blocs
         BlocProvider(create: (_) => TimerBloc()),
         BlocProvider(create: (_) => CatBloc()),
         BlocProvider(create: (_) => FactBloc()),
         BlocProvider(create: (_) => StreaksBloc()),
-        // ✅ Theme Bloc
         BlocProvider(create: (_) => ThemeBloc()),
       ],
-      // ✅ Wrap with BlocBuilder to rebuild app on theme change
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, state) {
           return MaterialApp(
@@ -49,7 +46,7 @@ class MyApp extends StatelessWidget {
             title: 'StudyMate',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: state.themeMode, // ✅ Dynamic Theme Mode
+            themeMode: state.themeMode,
             home: const SplashScreen(),
           );
         },
@@ -57,4 +54,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-  

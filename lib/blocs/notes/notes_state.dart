@@ -1,7 +1,7 @@
 part of 'notes_bloc.dart';
 
-// ✅ ADDED: Filter Enum
 enum NoteSortOption { newest, oldest, aToZ, zToA }
+
 enum NoteFilterOption { all, hasImage, textOnly }
 
 abstract class NotesState {}
@@ -15,7 +15,7 @@ class NotesLoaded extends NotesState {
   final List<QueryDocumentSnapshot> filteredNotes;
   final String searchQuery;
   final NoteSortOption sortOption;
-  // ✅ ADDED: Filter state
+
   final NoteFilterOption filterOption;
 
   NotesLoaded({
@@ -32,14 +32,13 @@ class NotesError extends NotesState {
   NotesError(this.message);
 }
 
-// ☁️ UPLOAD STATES (Updated to preserve filter)
 class NoteAttachmentUploading extends NotesState {
-  final List<QueryDocumentSnapshot> allNotes; 
+  final List<QueryDocumentSnapshot> allNotes;
   final List<QueryDocumentSnapshot> filteredNotes;
   final NoteFilterOption filterOption;
 
   NoteAttachmentUploading({
-    required this.allNotes, 
+    required this.allNotes,
     required this.filteredNotes,
     this.filterOption = NoteFilterOption.all,
   });

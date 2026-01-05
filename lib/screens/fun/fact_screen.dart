@@ -26,56 +26,61 @@ class FactScreen extends StatelessWidget {
         titleTextStyle: theme.appBarTheme.titleTextStyle,
       ),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              BlocBuilder<FactBloc, FactState>(
-                builder: (context, state) {
-                  if (state is FactLoading) {
-                    return const CircularProgressIndicator();
-                  } else if (state is FactLoaded) {
-                    return Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 10, 
-                            color: Colors.black.withValues(alpha: 0.12)
-                          )
-                        ],
-                      ),
-                      child: Text(
-                        state.fact,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 18, 
-                          height: 1.5,
-                          color: theme.textTheme.bodyLarge?.color,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                BlocBuilder<FactBloc, FactState>(
+                  builder: (context, state) {
+                    if (state is FactLoading) {
+                      return const CircularProgressIndicator();
+                    } else if (state is FactLoaded) {
+                      return Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                                blurRadius: 10,
+                                color: Colors.black.withValues(alpha: 0.12))
+                          ],
                         ),
-                      ),
-                    );
-                  } else if (state is FactError) {
-                    return Text(state.message, style: const TextStyle(color: Colors.red));
-                  }
-                  return const SizedBox.shrink();
-                },
-              ),
-              const SizedBox(height: 40),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.accentYellow,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: Text(
+                          state.fact,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            height: 1.5,
+                            color: theme.textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      );
+                    } else if (state is FactError) {
+                      return Text(state.message,
+                          style: const TextStyle(color: Colors.red));
+                    }
+                    return const SizedBox.shrink();
+                  },
                 ),
-                onPressed: () => context.read<FactBloc>().add(FactRequested()),
-                icon: const Icon(Icons.lightbulb_outline),
-                label: const Text("Next Fact"),
-              ),
-            ],
+                const SizedBox(height: 40),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentYellow,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                  onPressed: () =>
+                      context.read<FactBloc>().add(FactRequested()),
+                  icon: const Icon(Icons.lightbulb_outline),
+                  label: const Text("Next Fact"),
+                ),
+              ],
+            ),
           ),
         ),
       ),
