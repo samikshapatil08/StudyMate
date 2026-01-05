@@ -20,7 +20,8 @@ class NotesScreen extends StatelessWidget {
         : width > 800
             ? 3
             : 2;
-
+    final double aspectRatio = width < 400 ? 0.75 : 0.85;
+    final double fontScale = (width / 400).clamp(0.85, 1.2);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
@@ -35,7 +36,8 @@ class NotesScreen extends StatelessWidget {
                   child: Text(
                     "Your Notes",
                     style: GoogleFonts.inter(
-                      fontSize: 18,
+                      
+                      fontSize: 18 * fontScale,
                       color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
@@ -49,7 +51,7 @@ class NotesScreen extends StatelessWidget {
                       currentFilter = state.filterOption;
                     }
                     return PopupMenuButton<dynamic>(
-                      icon: Icon(Icons.sort, color: theme.iconTheme.color),
+                      icon: Icon(Icons.sort, color: theme.iconTheme.color,size: 24 * fontScale),
                       color: theme.cardColor,
                       onSelected: (value) {
                         if (value is NoteSortOption) {
@@ -111,8 +113,8 @@ class NotesScreen extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => _showNoteDialog(context, null),
                   icon: const Icon(Icons.add, color: Colors.red),
-                  label: Text("Add",
-                      style: GoogleFonts.inter(
+                  label: Text("Add", 
+                      style: GoogleFonts.inter( fontSize: 14 * fontScale,
                           fontWeight: FontWeight.w600, color: Colors.red)),
                 ),
               ],
@@ -126,15 +128,16 @@ class NotesScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
-                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color,fontSize: 14 * fontScale),
                 onChanged: (val) =>
                     context.read<NotesBloc>().add(NotesSearchChanged(val)),
                 decoration: InputDecoration(
                   hintText: "Search notes...",
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.inter( fontSize: 14 * fontScale,
                       color: theme.textTheme.bodyMedium?.color),
                   prefixIcon: Icon(Icons.search,
-                      color: theme.textTheme.bodyMedium?.color),
+                  size: 20 * fontScale,
+                      color: theme.textTheme.bodyMedium?.color,),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.all(14),
                 ),
@@ -160,7 +163,7 @@ class NotesScreen extends StatelessWidget {
                 if (notes.isEmpty) {
                   return Center(
                       child: Text("No notes found",
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.inter( fontSize: 16 * fontScale,
                               color: theme.textTheme.bodyMedium?.color)));
                 }
 
@@ -170,6 +173,7 @@ class NotesScreen extends StatelessWidget {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
+                    childAspectRatio: aspectRatio,
                   ),
                   itemCount: notes.length,
                   itemBuilder: (context, index) {
@@ -204,31 +208,34 @@ class NotesScreen extends StatelessWidget {
                           children: [
                             Text(
                               data['title'] ?? '',
+                              
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                                  fontSize: 16 * fontScale,
                                   color: AppTheme.textOnColor),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              data['content'] ?? '',
-                              maxLines: 4,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(
-                                  color: AppTheme.textOnColor),
+                            Expanded(
+                              child: Text(
+                                data['content'] ?? '',
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(
+                                    color: AppTheme.textOnColor, fontSize: 13 * fontScale,),
+                              ),
                             ),
                             if (attachments.isNotEmpty) ...[
                               const Spacer(),
                               Row(
                                 children: [
-                                  const Icon(Icons.attachment,
-                                      size: 16, color: Colors.white70),
+                                Icon(Icons.attachment,
+                                      size: 14 * fontScale, color: Colors.white70),
                                   const SizedBox(width: 4),
                                   Text("${attachments.length}",
-                                      style: const TextStyle(
-                                          color: Colors.white70, fontSize: 12)),
+                                      style:  TextStyle(
+                                          color: Colors.white70, fontSize: 11 * fontScale)),
                                 ],
                               ),
                             ],

@@ -106,54 +106,63 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         extendBody: true,
         bottomNavigationBar: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 600),
-                child: Container(
-                  height: 64,
-                  width: MediaQuery.of(context).size.width - 32,
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _NavItem(
-                          icon: Icons.edit_outlined,
-                          label: "Notes",
-                          index: 0,
-                          selectedIndex: _selectedIndex,
-                          onTap: _onTap),
-                      _NavItem(
-                          icon: Icons.check_circle_outline,
-                          label: "To-Do",
-                          index: 1,
-                          selectedIndex: _selectedIndex,
-                          onTap: _onTap),
-                      _NavItem(
-                          icon: Icons.chat_bubble_outline,
-                          label: "Chat",
-                          index: 2,
-                          selectedIndex: _selectedIndex,
-                          onTap: _onTap),
-                      _NavItem(
-                          icon: Icons.celebration_outlined,
-                          label: "Fun",
-                          index: 3,
-                          selectedIndex: _selectedIndex,
-                          onTap: _onTap),
-                    ],
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Container(
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Flexible(
+                          child: _NavItem(
+                              icon: Icons.edit_outlined,
+                              label: "Notes",
+                              index: 0,
+                              selectedIndex: _selectedIndex,
+                              onTap: _onTap),
+                        ),
+                        Flexible(
+                          child: _NavItem(
+                              icon: Icons.check_circle_outline,
+                              label: "To-Do",
+                              index: 1,
+                              selectedIndex: _selectedIndex,
+                              onTap: _onTap),
+                        ),
+                        Flexible(
+                          child: _NavItem(
+                              icon: Icons.chat_bubble_outline,
+                              label: "Chat",
+                              index: 2,
+                              selectedIndex: _selectedIndex,
+                              onTap: _onTap),
+                        ),
+                        Flexible(
+                          child: _NavItem(
+                              icon: Icons.celebration_outlined,
+                              label: "Fun",
+                              index: 3,
+                              selectedIndex: _selectedIndex,
+                              onTap: _onTap),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -193,12 +202,13 @@ class _NavItem extends StatelessWidget {
       onTap: () => onTap(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? AppTheme.primaryPurple : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
@@ -207,12 +217,16 @@ class _NavItem extends StatelessWidget {
             ),
             if (isActive) ...[
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],

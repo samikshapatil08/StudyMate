@@ -13,12 +13,18 @@ class FunHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+  
     final width = MediaQuery.of(context).size.width;
     final int crossAxisCount = width > 1000
         ? 4
         : width > 600
             ? 3
             : 2;
+
+    final double fontScale = (width / 400).clamp(0.85, 1.2);
+    
+   
+    final double aspectRatio = width < 350 ? 0.8 : 1.0;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -35,7 +41,7 @@ class FunHomeScreen extends StatelessWidget {
                     child: Text(
                       "Fun Zone",
                       style: GoogleFonts.inter(
-                        fontSize: 24,
+                        fontSize: 24 * fontScale, 
                         fontWeight: FontWeight.bold,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
@@ -44,15 +50,17 @@ class FunHomeScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: GridView.count(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
+                    childAspectRatio: aspectRatio, 
                     children: [
                       _FunCard(
                         title: "Focus Timer",
                         icon: Icons.timer,
                         color: AppTheme.primaryPurple,
+                        fontScale: fontScale,
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -62,6 +70,7 @@ class FunHomeScreen extends StatelessWidget {
                         title: "Daily Streaks",
                         icon: Icons.local_fire_department,
                         color: AppTheme.accentRed,
+                        fontScale: fontScale,
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -71,6 +80,7 @@ class FunHomeScreen extends StatelessWidget {
                         title: "Cat Generator",
                         icon: Icons.pets,
                         color: AppTheme.secondaryBlue,
+                        fontScale: fontScale,
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -80,6 +90,7 @@ class FunHomeScreen extends StatelessWidget {
                         title: "Useless Facts",
                         icon: Icons.lightbulb,
                         color: AppTheme.accentYellow,
+                        fontScale: fontScale,
                         onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -101,12 +112,14 @@ class _FunCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
+  final double fontScale; 
   final VoidCallback onTap;
 
   const _FunCard({
     required this.title,
     required this.icon,
     required this.color,
+    required this.fontScale,
     required this.onTap,
   });
 
@@ -137,14 +150,19 @@ class _FunCard extends StatelessWidget {
                 color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 32, color: color),
+              child: Icon(icon, size: 32 * fontScale, color: color), 
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-                color: theme.textTheme.bodyLarge?.color,
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14 * fontScale, 
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
               ),
             ),
           ],
