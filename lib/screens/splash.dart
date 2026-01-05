@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 7),
       vsync: this,
     )..repeat(reverse: true);
 
@@ -72,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
                     stops: [
                       0.0,
                       _animation.value,
-                      1.0,
+                      3.0,
                     ],
                   ).createShader(bounds);
                 },

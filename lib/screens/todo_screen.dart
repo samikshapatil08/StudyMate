@@ -65,6 +65,36 @@ class _TodoScreenState extends State<TodoScreen> {
                       );
                     },
                   ),
+                  BlocBuilder<TodoBloc, TodoState>(
+                    builder: (context, state) {
+                      var currentSort = TodoSortOption.newest;
+                      var currentFilter = TodoFilterStatus.all;
+                      if (state is TodosLoaded) {
+                        currentSort = state.sortOption;
+                        currentFilter = state.filterStatus;
+                      }
+                      return PopupMenuButton<dynamic>(
+                        icon: Icon(Icons.sort, color: theme.iconTheme.color),
+                        color: theme.cardColor,
+                        onSelected: (val) {
+                          if (val is TodoSortOption) {
+                            context.read<TodoBloc>().add(TodoSortChanged(val));
+                          } else if (val is TodoFilterStatus) {
+                            context.read<TodoBloc>().add(TodoFilterChanged(val));
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          CheckedPopupMenuItem(value: TodoSortOption.urgency, checked: currentSort == TodoSortOption.urgency, child: const Text("Urgency")),
+                          CheckedPopupMenuItem(value: TodoSortOption.newest, checked: currentSort == TodoSortOption.newest, child: const Text("Newest")),
+                          CheckedPopupMenuItem(value: TodoSortOption.aToZ, checked: currentSort == TodoSortOption.aToZ, child: const Text("A-Z")),
+                          const PopupMenuDivider(),
+                          CheckedPopupMenuItem(value: TodoFilterStatus.all, checked: currentFilter == TodoFilterStatus.all, child: const Text("All")),
+                          CheckedPopupMenuItem(value: TodoFilterStatus.pending, checked: currentFilter == TodoFilterStatus.pending, child: const Text("Pending")),
+                          CheckedPopupMenuItem(value: TodoFilterStatus.completed, checked: currentFilter == TodoFilterStatus.completed, child: const Text("Completed")),
+                        ],
+                      );
+                    },
+                  ),
                   IconButton(
                     icon: const Icon(Icons.add_circle,
                         color: AppTheme.primaryPurple, size: 28),
