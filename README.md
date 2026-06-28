@@ -1,4 +1,4 @@
-```markdown
+
 # StudyMate
 
 A cross-platform student productivity app built with Flutter — combining notes, to-dos, and an AI study assistant in one place.
